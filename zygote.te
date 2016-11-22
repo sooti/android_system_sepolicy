@@ -39,6 +39,12 @@ allow zygote dex2oat_exec:file rx_file_perms;
 # Control cgroups.
 allow zygote cgroup:dir create_dir_perms;
 allow zygote self:capability sys_admin;
+# Allow zygote to stat the files that it opens. The zygote must
+# be able to inspect them so that it can reopen them on fork
+# if necessary: b/30963384
+allow zygote pmsg_device:chr_file { getattr };
+allow zygote debugfs_trace_marker:file { getattr };
+
 # Check validity of SELinux context before use.
 selinux_check_context(zygote)
 # Check SELinux permissions.
@@ -80,31 +86,6 @@ userdebug_or_eng(`
   allow zygote method_trace_data_file:dir w_dir_perms;
   allow zygote method_trace_data_file:file { create w_file_perms };
 ')
-
-###
-### A/B OTA
-###
-
-# The zygote is responsible for detecting A/B OTA artifacts and moving them into
-# the actual dalvik-cache.
-
-# Allow zygote access to files in /data/ota.
-# This includes reading symlinks in /data/ota/dalvik-cache. This is required for PIC mode boot
-# images, where the oat file is symlinked to the original file in /system.
-r_dir_file(zygote, ota_data_file)
-
-# The zygote renames the OTA dalvik-cache to the regular dalvik-cache.
-allow zygote ota_data_file:dir { rw_dir_perms rename reparent };
-
-# And needs to relabel the entries, so as to have the dalvikcache_data_file label.
-allow zygote ota_data_file:{ dir file lnk_file } relabelfrom;
-allow zygote dalvikcache_data_file:{ dir file lnk_file } relabelto;
-
-# The zygote also cleans up the now-empty dalvik-cache directory after an OTA.
-# In case something goes wrong in relabelling, we also need to be able to delete the files that
-# have already been moved.
-allow zygote ota_data_file:dir rmdir;
-allow zygote ota_data_file:{ file lnk_file } unlink;
 
 ###
 ### neverallow rules
