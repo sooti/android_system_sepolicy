@@ -274,6 +274,7 @@ neverallow { domain -kernel -init -recovery -vold -zygote -update_engine -otapre
 neverallow {
     domain
     -appdomain
+    -audioserver
     -autoplay_app
     -dumpstate
     -shell
@@ -318,9 +319,6 @@ neverallow { domain -recovery -kernel } { system_file exec_type }:dir_file_class
 # Don't allow mounting on top of /system files or directories
 neverallow * exec_type:dir_file_class_set mounton;
 neverallow { domain -init } system_file:dir_file_class_set mounton;
-
-# Nothing should be writing to files in the rootfs.
-neverallow * rootfs:file { create write setattr relabelto append unlink link rename };
 
 # Restrict context mounts to specific types marked with
 # the contextmount_type attribute.
@@ -422,7 +420,7 @@ neverallow * { file_type fs_type dev_type }:{ lnk_file fifo_file sock_file } mou
 # Nobody should be able to execute su on user builds.
 # On userdebug/eng builds, only dumpstate, shell, and
 # su itself execute su.
-neverallow { domain userdebug_or_eng(`-dumpstate -shell -su') } su_exec:file no_x_file_perms;
+neverallow { domain userdebug_or_eng(`-dumpstate -shell -su -domain') } su_exec:file no_x_file_perms;
 
 # Do not allow the introduction of new execmod rules. Text relocations
 # and modification of executable pages are unsafe.
